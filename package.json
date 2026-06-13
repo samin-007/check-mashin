@@ -24,6 +24,7 @@
     "expo-clipboard": "~7.0.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.25.0"
+    "@babel/core": "^7.25.0",
+    "babel-plugin-module-resolver": "^5.0.0"
   }
 }
