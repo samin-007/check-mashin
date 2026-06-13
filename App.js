@@ -1,10 +1,10 @@
 /**
- * چک‌ماشین — اپلیکیشن اصلی
+ * چک‌ماشین — اپلیکیشن اصلی (Expo)
  * رادار فرصت خرید + تشخیص کلاهبرداری خودرو
  */
 
 import React, { useState } from 'react';
-import { StatusBar } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { AppNavigator } from './src/navigation';
 import SplashScreen from './src/screens/SplashScreen';
 import { colors } from './src/theme';
@@ -15,7 +15,7 @@ const App = () => {
   if (showSplash) {
     return (
       <>
-        <StatusBar barStyle="light-content" backgroundColor={colors.background.primary} />
+        <StatusBar style="light" backgroundColor={colors.background.primary} />
         <SplashScreen onFinish={() => setShowSplash(false)} />
       </>
     );
@@ -23,7 +23,7 @@ const App = () => {
 
   return (
     <>
-      <StatusBar barStyle="light-content" backgroundColor={colors.background.primary} />
+      <StatusBar style="light" backgroundColor={colors.background.primary} />
       <AppNavigator />
     </>
   );

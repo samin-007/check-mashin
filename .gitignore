@@ -1,10 +1,10 @@
 # Dependencies
 node_modules/
 
-# React Native
-android/app/build/
-ios/Pods/
-ios/build/
+# Expo
+.expo/
+dist/
+web-build/
 
 # Environment
 .env
@@ -25,8 +25,8 @@ Thumbs.db
 *.key
 *.mobileprovision
 
-# Metro
-.metro-health-check*
-
 # Testing
 coverage/
+
+# Logs
+*.log

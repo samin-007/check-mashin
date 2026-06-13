@@ -1,6 +1,5 @@
 /**
- * صفحه اصلی — داشبورد چک‌ماشین
- * حس داشبورد ماشین اسپرت: شاخص‌ها + فرصت‌ها + چک سریع + تیکر بازار
+ * صفحه اصلی — داشبورد چک‌ماشین (Expo Compatible)
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -14,16 +13,8 @@ import {
   Easing,
   Dimensions,
 } from 'react-native';
-import {
-  Header,
-  Button,
-  Card,
-  OpportunityCard,
-  GradientCard,
-  SearchBar,
-  MarketTicker,
-} from '@components';
-import { colors, typography, spacing, borderRadius, shadow } from '@theme';
+import { Card, OpportunityCard, GradientCard, SearchBar, MarketTicker } from '../components';
+import { colors, typography, spacing, borderRadius } from '../theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -86,7 +77,6 @@ const DashboardScreen = ({ navigation }) => {
   ).current;
 
   useEffect(() => {
-    // انیمیشن ورودی صفحه
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -101,7 +91,6 @@ const DashboardScreen = ({ navigation }) => {
       }),
     ]).start();
 
-    // انیمیشن stagger برای کارت‌ها
     Animated.stagger(
       150,
       cardAnims.map((anim) =>
@@ -126,11 +115,16 @@ const DashboardScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Header
-        title="چک‌ماشین"
-        subtitle="رادار فرصت خرید خودرو"
-        showLogo
-      />
+      {/* هدر */}
+      <View style={styles.header}>
+        <View style={styles.logoBox}>
+          <Text style={styles.logoText}>CM</Text>
+        </View>
+        <View>
+          <Text style={styles.headerTitle}>چک‌ماشین</Text>
+          <Text style={styles.headerSubtitle}>رادار فرصت خرید خودرو</Text>
+        </View>
+      </View>
 
       {/* تیکر بازار */}
       <MarketTicker />
@@ -140,7 +134,7 @@ const DashboardScreen = ({ navigation }) => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* بخش چک آگهی — Hero Section */}
+        {/* Hero Section */}
         <Animated.View style={[styles.heroSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
           <GradientCard variant="primary" glowing>
             <View style={styles.heroContent}>
@@ -161,7 +155,7 @@ const DashboardScreen = ({ navigation }) => {
           </GradientCard>
         </Animated.View>
 
-        {/* شاخص‌های بازار */}
+        {/* شاخص بازار */}
         <Animated.View style={[styles.marketSection, { opacity: fadeAnim }]}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>📊 وضعیت بازار</Text>
@@ -170,10 +164,9 @@ const DashboardScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          {/* شاخص کل */}
           <Card style={styles.indexCard}>
             <View style={styles.indexRow}>
-              <View style={styles.indexLeft}>
+              <View>
                 <Text style={styles.indexLabel}>شاخص کل خودرو</Text>
                 <View style={styles.indexValueRow}>
                   <Text style={styles.indexValue}>{MOCK_MARKET.indexValue}</Text>
@@ -184,34 +177,28 @@ const DashboardScreen = ({ navigation }) => {
                   </View>
                 </View>
               </View>
-              {/* Mini chart placeholder */}
               <View style={styles.miniChart}>
-                <View style={styles.chartBar1} />
-                <View style={styles.chartBar2} />
-                <View style={styles.chartBar3} />
-                <View style={styles.chartBar4} />
-                <View style={styles.chartBar5} />
-                <View style={styles.chartBar6} />
-                <View style={styles.chartBar7} />
+                <View style={[styles.chartBar, { height: 15 }]} />
+                <View style={[styles.chartBar, { height: 22 }]} />
+                <View style={[styles.chartBar, { height: 18 }]} />
+                <View style={[styles.chartBar, { height: 28 }]} />
+                <View style={[styles.chartBar, { height: 24 }]} />
+                <View style={[styles.chartBar, { height: 32 }]} />
+                <View style={[styles.chartBar, { height: 38, backgroundColor: colors.primary }]} />
               </View>
             </View>
           </Card>
 
-          {/* کارت‌های کوچک */}
           <View style={styles.miniCards}>
             <Card style={styles.miniCard}>
               <Text style={styles.miniCardIcon}>📈</Text>
               <Text style={styles.miniCardValue}>{MOCK_MARKET.topGainer.name}</Text>
-              <Text style={[styles.miniCardChange, { color: colors.status.safe }]}>
-                +{MOCK_MARKET.topGainer.change}٪
-              </Text>
+              <Text style={[styles.miniCardChange, { color: colors.status.safe }]}>+{MOCK_MARKET.topGainer.change}٪</Text>
             </Card>
             <Card style={styles.miniCard}>
               <Text style={styles.miniCardIcon}>📉</Text>
               <Text style={styles.miniCardValue}>{MOCK_MARKET.topLoser.name}</Text>
-              <Text style={[styles.miniCardChange, { color: colors.status.danger }]}>
-                {MOCK_MARKET.topLoser.change}٪
-              </Text>
+              <Text style={[styles.miniCardChange, { color: colors.status.danger }]}>{MOCK_MARKET.topLoser.change}٪</Text>
             </Card>
             <Card style={styles.miniCard}>
               <Text style={styles.miniCardIcon}>🔥</Text>
@@ -221,7 +208,7 @@ const DashboardScreen = ({ navigation }) => {
           </View>
         </Animated.View>
 
-        {/* فرصت‌های امروز */}
+        {/* فرصت‌ها */}
         <View style={styles.opportunitiesSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>🔥 فرصت‌های داغ امروز</Text>
@@ -254,7 +241,7 @@ const DashboardScreen = ({ navigation }) => {
           ))}
         </View>
 
-        {/* آمار کلی */}
+        {/* آمار */}
         <View style={styles.statsSection}>
           <GradientCard variant="dark">
             <Text style={styles.statsTitle}>📋 عملکرد امروز</Text>
@@ -265,34 +252,14 @@ const DashboardScreen = ({ navigation }) => {
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={[styles.statNumber, { color: colors.status.safe }]}>
-                  {MOCK_MARKET.opportunities}
-                </Text>
+                <Text style={[styles.statNumber, { color: colors.status.safe }]}>{MOCK_MARKET.opportunities}</Text>
                 <Text style={styles.statLabel}>فرصت</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={[styles.statNumber, { color: colors.status.danger }]}>
-                  {MOCK_MARKET.scams}
-                </Text>
+                <Text style={[styles.statNumber, { color: colors.status.danger }]}>{MOCK_MARKET.scams}</Text>
                 <Text style={styles.statLabel}>مشکوک</Text>
               </View>
-            </View>
-          </GradientCard>
-        </View>
-
-        {/* CTA اشتراک */}
-        <View style={styles.ctaSection}>
-          <GradientCard variant="premium" glowing onPress={() => {}}>
-            <View style={styles.ctaContent}>
-              <Text style={styles.ctaIcon}>⚡</Text>
-              <View style={styles.ctaText}>
-                <Text style={styles.ctaTitle}>نسخه حرفه‌ای</Text>
-                <Text style={styles.ctaSubtitle}>
-                  رادار نامحدود + هشدار لحظه‌ای + تحلیل پیشرفته
-                </Text>
-              </View>
-              <Text style={styles.ctaArrow}>←</Text>
             </View>
           </GradientCard>
         </View>
@@ -302,212 +269,52 @@ const DashboardScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 100,
-  },
+  container: { flex: 1, backgroundColor: colors.background.primary },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: 50, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border.secondary },
+  logoBox: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', marginRight: spacing.md },
+  logoText: { color: colors.text.inverse, fontWeight: '800', fontSize: 14 },
+  headerTitle: { ...typography.h3, color: colors.text.primary },
+  headerSubtitle: { ...typography.caption, color: colors.text.secondary },
+  scroll: { flex: 1 },
+  scrollContent: { paddingBottom: 100 },
 
-  // Hero
-  heroSection: {
-    padding: spacing.lg,
-  },
-  heroContent: {
-    alignItems: 'center',
-    marginBottom: spacing.xl,
-  },
-  heroEmoji: {
-    fontSize: 40,
-    marginBottom: spacing.sm,
-  },
-  heroTitle: {
-    ...typography.h2,
-    color: colors.text.primary,
-    textAlign: 'center',
-  },
-  heroSubtitle: {
-    ...typography.bodySmall,
-    color: colors.text.secondary,
-    textAlign: 'center',
-    marginTop: spacing.xs,
-    lineHeight: 22,
-  },
+  heroSection: { padding: spacing.lg },
+  heroContent: { alignItems: 'center', marginBottom: spacing.xl },
+  heroEmoji: { fontSize: 40, marginBottom: spacing.sm },
+  heroTitle: { ...typography.h2, color: colors.text.primary, textAlign: 'center' },
+  heroSubtitle: { ...typography.bodySmall, color: colors.text.secondary, textAlign: 'center', marginTop: spacing.xs, lineHeight: 22 },
 
-  // شاخص بازار
-  marketSection: {
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.sm,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  sectionTitle: {
-    ...typography.h4,
-    color: colors.text.primary,
-  },
-  seeAll: {
-    ...typography.label,
-    color: colors.primary,
-  },
-  indexCard: {
-    padding: spacing.lg,
-    borderColor: `${colors.primary}30`,
-  },
-  indexRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  indexLeft: {},
-  indexLabel: {
-    ...typography.caption,
-    color: colors.text.secondary,
-  },
-  indexValueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.xs,
-    gap: spacing.sm,
-  },
-  indexValue: {
-    ...typography.h2,
-    color: colors.text.primary,
-  },
-  changeBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: borderRadius.sm,
-  },
-  changeText: {
-    ...typography.captionBold,
-  },
+  marketSection: { paddingHorizontal: spacing.lg, marginTop: spacing.sm },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
+  sectionTitle: { ...typography.h4, color: colors.text.primary },
+  seeAll: { ...typography.label, color: colors.primary },
+  indexCard: { padding: spacing.lg, borderColor: `${colors.primary}30` },
+  indexRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  indexLabel: { ...typography.caption, color: colors.text.secondary },
+  indexValueRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs, gap: spacing.sm },
+  indexValue: { ...typography.h2, color: colors.text.primary },
+  changeBadge: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: borderRadius.sm },
+  changeText: { ...typography.captionBold },
+  miniChart: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 40 },
+  chartBar: { width: 4, backgroundColor: `${colors.primary}70`, borderRadius: 2 },
 
-  // Mini chart (placeholder bars)
-  miniChart: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 3,
-    height: 40,
-  },
-  chartBar1: { width: 4, height: 15, backgroundColor: `${colors.primary}60`, borderRadius: 2 },
-  chartBar2: { width: 4, height: 22, backgroundColor: `${colors.primary}70`, borderRadius: 2 },
-  chartBar3: { width: 4, height: 18, backgroundColor: `${colors.primary}60`, borderRadius: 2 },
-  chartBar4: { width: 4, height: 28, backgroundColor: `${colors.primary}80`, borderRadius: 2 },
-  chartBar5: { width: 4, height: 24, backgroundColor: `${colors.primary}70`, borderRadius: 2 },
-  chartBar6: { width: 4, height: 32, backgroundColor: `${colors.primary}90`, borderRadius: 2 },
-  chartBar7: { width: 4, height: 38, backgroundColor: colors.primary, borderRadius: 2 },
+  miniCards: { flexDirection: 'row', marginTop: spacing.md, gap: spacing.sm },
+  miniCard: { flex: 1, padding: spacing.md, alignItems: 'center' },
+  miniCardIcon: { fontSize: 18 },
+  miniCardValue: { ...typography.captionBold, color: colors.text.primary, marginTop: spacing.xs, fontSize: 12 },
+  miniCardChange: { ...typography.captionBold, fontSize: 11, marginTop: 2 },
+  miniCardLabel: { ...typography.caption, color: colors.text.secondary, marginTop: 2, fontSize: 10 },
 
-  // Mini cards
-  miniCards: {
-    flexDirection: 'row',
-    marginTop: spacing.md,
-    gap: spacing.sm,
-  },
-  miniCard: {
-    flex: 1,
-    padding: spacing.md,
-    alignItems: 'center',
-  },
-  miniCardIcon: {
-    fontSize: 18,
-  },
-  miniCardValue: {
-    ...typography.captionBold,
-    color: colors.text.primary,
-    marginTop: spacing.xs,
-    fontSize: 12,
-  },
-  miniCardChange: {
-    ...typography.captionBold,
-    fontSize: 11,
-    marginTop: 2,
-  },
-  miniCardLabel: {
-    ...typography.caption,
-    color: colors.text.secondary,
-    marginTop: 2,
-    fontSize: 10,
-  },
+  opportunitiesSection: { paddingHorizontal: spacing.lg, marginTop: spacing.xxl },
+  oppCardWrapper: { marginBottom: spacing.md },
 
-  // فرصت‌ها
-  opportunitiesSection: {
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.xxl,
-  },
-  oppCardWrapper: {
-    marginBottom: spacing.md,
-  },
-
-  // آمار
-  statsSection: {
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.xxl,
-  },
-  statsTitle: {
-    ...typography.h4,
-    color: colors.text.primary,
-    marginBottom: spacing.lg,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statNumber: {
-    ...typography.h2,
-    color: colors.primary,
-  },
-  statLabel: {
-    ...typography.caption,
-    color: colors.text.secondary,
-    marginTop: spacing.xs,
-  },
-  statDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: colors.border.primary,
-  },
-
-  // CTA
-  ctaSection: {
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.xxl,
-  },
-  ctaContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ctaIcon: {
-    fontSize: 28,
-    marginRight: spacing.md,
-  },
-  ctaText: {
-    flex: 1,
-  },
-  ctaTitle: {
-    ...typography.bodyBold,
-    color: colors.warning,
-  },
-  ctaSubtitle: {
-    ...typography.caption,
-    color: colors.text.secondary,
-    marginTop: 2,
-  },
-  ctaArrow: {
-    fontSize: 20,
-    color: colors.warning,
-  },
+  statsSection: { paddingHorizontal: spacing.lg, marginTop: spacing.xxl },
+  statsTitle: { ...typography.h4, color: colors.text.primary, marginBottom: spacing.lg },
+  statsGrid: { flexDirection: 'row', alignItems: 'center' },
+  statItem: { flex: 1, alignItems: 'center' },
+  statNumber: { ...typography.h2, color: colors.primary },
+  statLabel: { ...typography.caption, color: colors.text.secondary, marginTop: spacing.xs },
+  statDivider: { width: 1, height: 40, backgroundColor: colors.border.primary },
 });
 
 export default DashboardScreen;

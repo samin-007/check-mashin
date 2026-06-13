@@ -1,5 +1,5 @@
 /**
- * چک‌ماشین — Navigation اصلی
+ * چک‌ماشین — Navigation اصلی (Expo Compatible)
  * Bottom Tab با تم خودرویی
  */
 
@@ -7,18 +7,16 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import {
-  DashboardScreen,
-  CheckScreen,
-  OpportunitiesScreen,
-  AlertsScreen,
-  MarketScreen,
-} from '@screens';
-import { colors, typography, spacing } from '@theme';
+import DashboardScreen from '../screens/DashboardScreen';
+import CheckScreen from '../screens/CheckScreen';
+import OpportunitiesScreen from '../screens/OpportunitiesScreen';
+import AlertsScreen from '../screens/AlertsScreen';
+import MarketScreen from '../screens/MarketScreen';
+import { colors, typography, spacing } from '../theme';
 
 const Tab = createBottomTabNavigator();
 
-// آیکون‌های ساده (بعداً با react-native-vector-icons جایگزین می‌شه)
+// آیکون‌های ساده (emoji)
 const TabIcon = ({ label, focused }) => {
   const icons = {
     'خانه': '🏠',
@@ -81,7 +79,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   tabLabel: {
-    ...typography.caption,
     fontSize: 10,
     fontWeight: '600',
   },
