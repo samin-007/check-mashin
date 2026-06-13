@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# React Native
+android/app/build/
+ios/Pods/
+ios/build/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# Testing
+coverage/
