@@ -31,6 +31,7 @@ class DivarScraper:
         try:
             token = self._extract_token(url)
             if not token:
+                print(f"[DivarScraper] No token found in URL")
                 return None
 
             # delay تصادفی (۲ تا ۵ ثانیه)
@@ -40,17 +41,21 @@ class DivarScraper:
                 self.headers["User-Agent"] = random.choice(USER_AGENTS)
 
                 # روش ۱: API دیوار
-                response = await client.get(
-                    f"https://api.divar.ir/v8/posts-v2/web/{token}",
-                    headers=self.headers,
-                )
+                api_url = f"https://api.divar.ir/v8/posts-v2/web/{token}"
+                print(f"[DivarScraper] Trying API: {api_url}")
+                response = await client.get(api_url, headers=self.headers)
+                print(f"[DivarScraper] API response: {response.status_code}")
 
                 if response.status_code == 200:
                     data = response.json()
                     return self._parse_api_response(data, url)
 
                 # روش ۲: HTML fallback
+                print(f"[DivarScraper] API failed, trying HTML...")
+                await asyncio.sleep(random.uniform(1, 3))
                 response = await client.get(url, headers=self.headers, follow_redirects=True)
+                print(f"[DivarScraper] HTML response: {response.status_code}")
+                
                 if response.status_code == 200:
                     return self._parse_html(response.text, url)
 
@@ -87,14 +92,21 @@ class DivarScraper:
 
     def _extract_token(self, url: str) -> Optional[str]:
         """استخراج token از URL"""
+        # حذف query string
+        url_clean = url.split('?')[0]
+        
         patterns = [
             r'divar\.ir/v/[^/]+/([a-zA-Z0-9_-]+)',
             r'divar\.ir/v/([a-zA-Z0-9_-]+)',
         ]
         for pattern in patterns:
-            match = re.search(pattern, url)
+            match = re.search(pattern, url_clean)
             if match:
-                return match.group(1)
+                token = match.group(1)
+                print(f"[DivarScraper] Extracted token: {token}")
+                return token
+        
+        print(f"[DivarScraper] Could not extract token from: {url_clean}")
         return None
 
     def _parse_api_response(self, data: dict, url: str) -> Optional[Dict]:
