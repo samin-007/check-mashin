@@ -1,5 +1,5 @@
 /**
- * صفحه فرصت‌های امروز — لیست آگهی‌های زیر قیمت بازار
+ * صفحه فرصت‌ها — وصل به API واقعی
  */
 
 import React, { useState } from 'react';
@@ -10,108 +10,62 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
-import { Header, Card, OpportunityCard } from '@components';
-import { colors, typography, spacing, borderRadius } from '@theme';
+import { Card, OpportunityCard } from '../components';
+import { useOpportunities } from '../hooks';
+import { colors, typography, spacing, borderRadius } from '../theme';
 
-// داده‌های نمونه
-const MOCK_OPPORTUNITIES = [
-  {
-    id: '1',
-    carName: 'پژو ۲۰۷ اتوماتیک',
-    year: '۱۴۰۲',
-    city: 'تهران',
-    price: 1180,
-    marketPrice: 1280,
-    healthScore: 85,
-    timeAgo: '۲ ساعت پیش',
-    discount: 8,
-  },
-  {
-    id: '2',
-    carName: 'دنا پلاس توربو',
-    year: '۱۴۰۲',
-    city: 'اصفهان',
-    price: 1250,
-    marketPrice: 1350,
-    healthScore: 78,
-    timeAgo: '۴ ساعت پیش',
-    discount: 7,
-  },
-  {
-    id: '3',
-    carName: 'تارا اتوماتیک',
-    year: '۱۴۰۳',
-    city: 'تهران',
-    price: 1420,
-    marketPrice: 1530,
-    healthScore: 92,
-    timeAgo: '۳۰ دقیقه پیش',
-    discount: 7,
-  },
-  {
-    id: '4',
-    carName: 'هایما S7 توربو',
-    year: '۱۴۰۱',
-    city: 'کرج',
-    price: 980,
-    marketPrice: 1080,
-    healthScore: 71,
-    timeAgo: '۵ ساعت پیش',
-    discount: 9,
-  },
-  {
-    id: '5',
-    carName: 'کوییک R اتوماتیک',
-    year: '۱۴۰۲',
-    city: 'تهران',
-    price: 720,
-    marketPrice: 790,
-    healthScore: 88,
-    timeAgo: '۱ ساعت پیش',
-    discount: 9,
-  },
-  {
-    id: '6',
-    carName: 'شاهین G',
-    year: '۱۴۰۳',
-    city: 'شیراز',
-    price: 850,
-    marketPrice: 920,
-    healthScore: 80,
-    timeAgo: '۳ ساعت پیش',
-    discount: 8,
-  },
-];
-
-const FILTERS = ['همه', 'بالای ۵٪ تخفیف', 'امتیاز بالا', 'تهران', 'امروز'];
+const FILTERS = ['همه', 'بالای ۷٪', 'امتیاز بالا', 'تهران'];
 
 const OpportunitiesScreen = ({ navigation }) => {
   const [activeFilter, setActiveFilter] = useState('همه');
+  
+  // پارامترهای فیلتر
+  const getParams = () => {
+    switch (activeFilter) {
+      case 'بالای ۷٪': return { min_discount: 7, limit: 30 };
+      case 'تهران': return { city: 'تهران', min_discount: 5, limit: 30 };
+      default: return { min_discount: 5, limit: 30 };
+    }
+  };
+
+  const { data: opportunities, loading, refetch } = useOpportunities(getParams());
 
   const renderOpportunity = ({ item }) => (
     <View style={styles.cardWrapper}>
       <OpportunityCard
-        opportunity={item}
-        onPress={() => navigation?.navigate('CheckResult', { opportunity: item })}
+        opportunity={{
+          ...item,
+          carName: item.car_name,
+          healthScore: item.health_score,
+          timeAgo: item.time_ago,
+          marketPrice: item.market_price,
+        }}
+        onPress={() => navigation?.navigate('چک آگهی', { link: item.url })}
       />
     </View>
   );
 
+  // آمار
+  const totalOpps = opportunities?.length || 0;
+  const avgDiscount = totalOpps > 0 
+    ? Math.round(opportunities.reduce((sum, o) => sum + (o.discount || 0), 0) / totalOpps)
+    : 0;
+  const avgScore = totalOpps > 0
+    ? Math.round(opportunities.reduce((sum, o) => sum + (o.health_score || 0), 0) / totalOpps)
+    : 0;
+
   return (
     <View style={styles.container}>
-      <Header
-        title="فرصت‌ها"
-        subtitle={`${MOCK_OPPORTUNITIES.length} فرصت فعال`}
-      />
+      {/* هدر */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>فرصت‌ها</Text>
+        <Text style={styles.headerSubtitle}>{totalOpps} فرصت فعال</Text>
+      </View>
 
       {/* فیلترها */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterRow}
-        contentContainerStyle={styles.filterContent}
-      >
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterContent}>
         {FILTERS.map((filter) => (
           <TouchableOpacity
             key={filter}
@@ -128,97 +82,66 @@ const OpportunitiesScreen = ({ navigation }) => {
       {/* خلاصه */}
       <View style={styles.summaryRow}>
         <Card style={styles.summaryCard}>
-          <Text style={styles.summaryNumber}>۲۳</Text>
-          <Text style={styles.summaryLabel}>فرصت امروز</Text>
+          <Text style={styles.summaryNumber}>{totalOpps}</Text>
+          <Text style={styles.summaryLabel}>فرصت</Text>
         </Card>
         <Card style={styles.summaryCard}>
-          <Text style={[styles.summaryNumber, { color: colors.status.safe }]}>٪۸</Text>
+          <Text style={[styles.summaryNumber, { color: colors.status.safe }]}>٪{avgDiscount}</Text>
           <Text style={styles.summaryLabel}>میانگین تخفیف</Text>
         </Card>
         <Card style={styles.summaryCard}>
-          <Text style={styles.summaryNumber}>۸۵</Text>
+          <Text style={styles.summaryNumber}>{avgScore}</Text>
           <Text style={styles.summaryLabel}>میانگین امتیاز</Text>
         </Card>
       </View>
 
-      {/* لیست فرصت‌ها */}
-      <FlatList
-        data={MOCK_OPPORTUNITIES}
-        renderItem={renderOpportunity}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
+      {/* لیست */}
+      {loading ? (
+        <ActivityIndicator color={colors.primary} size="large" style={{ padding: spacing.huge }} />
+      ) : opportunities && opportunities.length > 0 ? (
+        <FlatList
+          data={opportunities}
+          renderItem={renderOpportunity}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        />
+      ) : (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyIcon}>🔍</Text>
+          <Text style={styles.emptyText}>فرصتی با این فیلتر پیدا نشد</Text>
+          <Text style={styles.emptySubtext}>فیلتر دیگه‌ای امتحان کن یا بعداً چک کن</Text>
+        </View>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
+  container: { flex: 1, backgroundColor: colors.background.primary },
+  header: { paddingHorizontal: spacing.lg, paddingTop: 50, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border.secondary },
+  headerTitle: { ...typography.h3, color: colors.text.primary },
+  headerSubtitle: { ...typography.caption, color: colors.text.secondary, marginTop: 2 },
 
-  // فیلتر
-  filterRow: {
-    maxHeight: 50,
-    marginTop: spacing.md,
-  },
-  filterContent: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-  },
-  filterChip: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.background.secondary,
-    borderWidth: 1,
-    borderColor: colors.border.primary,
-    marginRight: spacing.sm,
-  },
-  filterChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  filterText: {
-    ...typography.label,
-    color: colors.text.secondary,
-  },
-  filterTextActive: {
-    color: colors.text.inverse,
-  },
+  filterRow: { maxHeight: 50, marginTop: spacing.md },
+  filterContent: { paddingHorizontal: spacing.lg, gap: spacing.sm },
+  filterChip: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: borderRadius.full, backgroundColor: colors.background.secondary, borderWidth: 1, borderColor: colors.border.primary, marginRight: spacing.sm },
+  filterChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  filterText: { ...typography.label, color: colors.text.secondary },
+  filterTextActive: { color: colors.text.inverse },
 
-  // خلاصه
-  summaryRow: {
-    flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-    gap: spacing.sm,
-  },
-  summaryCard: {
-    flex: 1,
-    padding: spacing.md,
-    alignItems: 'center',
-  },
-  summaryNumber: {
-    ...typography.h3,
-    color: colors.primary,
-  },
-  summaryLabel: {
-    ...typography.caption,
-    color: colors.text.secondary,
-    marginTop: spacing.xs,
-  },
+  summaryRow: { flexDirection: 'row', paddingHorizontal: spacing.lg, marginTop: spacing.lg, gap: spacing.sm },
+  summaryCard: { flex: 1, padding: spacing.md, alignItems: 'center' },
+  summaryNumber: { ...typography.h3, color: colors.primary },
+  summaryLabel: { ...typography.caption, color: colors.text.secondary, marginTop: spacing.xs },
 
-  // لیست
-  listContent: {
-    padding: spacing.lg,
-    paddingBottom: 100,
-  },
-  cardWrapper: {
-    marginBottom: spacing.md,
-  },
+  listContent: { padding: spacing.lg, paddingBottom: 100 },
+  cardWrapper: { marginBottom: spacing.md },
+
+  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.huge },
+  emptyIcon: { fontSize: 48, marginBottom: spacing.md },
+  emptyText: { ...typography.h4, color: colors.text.secondary },
+  emptySubtext: { ...typography.bodySmall, color: colors.text.tertiary, marginTop: spacing.sm },
 });
 
 export default OpportunitiesScreen;
