@@ -1,5 +1,5 @@
 /**
- * صفحه اصلی — داشبورد چک‌ماشین (Expo Compatible)
+ * صفحه اصلی — داشبورد (وصل به API واقعی + Fallback Mock)
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -11,152 +11,72 @@ import {
   TouchableOpacity,
   Animated,
   Easing,
-  Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { Card, OpportunityCard, GradientCard, SearchBar, MarketTicker } from '../components';
+import { useMarketIndex, useOpportunities } from '../hooks';
 import { colors, typography, spacing, borderRadius } from '../theme';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// داده‌های نمونه
-const MOCK_MARKET = {
-  indexValue: '۱۲,۴۵۰',
-  indexChange: +2.1,
-  topGainer: { name: 'کوییک R', change: +4.8 },
-  topLoser: { name: 'پراید ۱۱۱', change: -2.3 },
-  totalAds: '۱,۲۴۰',
-  opportunities: '۲۳',
-  scams: '۵',
-};
-
-const MOCK_OPPORTUNITIES = [
-  {
-    id: '1',
-    carName: 'پژو ۲۰۷ اتوماتیک',
-    year: '۱۴۰۲',
-    city: 'تهران',
-    price: 1180,
-    marketPrice: 1280,
-    healthScore: 85,
-    timeAgo: '۲ ساعت پیش',
-    discount: 8,
-  },
-  {
-    id: '2',
-    carName: 'دنا پلاس توربو',
-    year: '۱۴۰۲',
-    city: 'اصفهان',
-    price: 1250,
-    marketPrice: 1350,
-    healthScore: 78,
-    timeAgo: '۴ ساعت پیش',
-    discount: 7,
-  },
-  {
-    id: '3',
-    carName: 'تارا اتوماتیک',
-    year: '۱۴۰۳',
-    city: 'تهران',
-    price: 1420,
-    marketPrice: 1530,
-    healthScore: 92,
-    timeAgo: '۳۰ دقیقه پیش',
-    discount: 7,
-  },
-];
 
 const DashboardScreen = ({ navigation }) => {
   const [linkInput, setLinkInput] = useState('');
   const [checkLoading, setCheckLoading] = useState(false);
+  
+  // داده از API
+  const { data: marketData, loading: marketLoading } = useMarketIndex();
+  const { data: opportunities, loading: oppsLoading } = useOpportunities({ min_discount: 5, limit: 5 });
 
   // انیمیشن‌ها
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
-  const cardAnims = useRef(
-    MOCK_OPPORTUNITIES.map(() => new Animated.Value(0))
-  ).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 600,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
     ]).start();
-
-    Animated.stagger(
-      150,
-      cardAnims.map((anim) =>
-        Animated.spring(anim, {
-          toValue: 1,
-          tension: 80,
-          friction: 10,
-          useNativeDriver: true,
-        })
-      )
-    ).start();
   }, []);
 
   const handleCheckLink = () => {
     if (!linkInput.trim()) return;
-    setCheckLoading(true);
-    setTimeout(() => {
-      setCheckLoading(false);
-      navigation?.navigate('چک آگهی', { link: linkInput });
-    }, 1500);
+    navigation?.navigate('چک آگهی', { link: linkInput });
   };
+
+  // Fallback data اگه API جواب نداد
+  const indexValue = marketData?.index_value || '—';
+  const indexChange = marketData?.index_change || 0;
+  const totalAds = marketData?.total_ads || 0;
+  const topGainers = marketData?.top_gainers || [];
+  const topLosers = marketData?.top_losers || [];
 
   return (
     <View style={styles.container}>
       {/* هدر */}
       <View style={styles.header}>
-        <View style={styles.logoBox}>
-          <Text style={styles.logoText}>CM</Text>
-        </View>
+        <View style={styles.logoBox}><Text style={styles.logoText}>CM</Text></View>
         <View>
           <Text style={styles.headerTitle}>چک‌ماشین</Text>
           <Text style={styles.headerSubtitle}>رادار فرصت خرید خودرو</Text>
         </View>
       </View>
 
-      {/* تیکر بازار */}
       <MarketTicker />
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Hero Section */}
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        
+        {/* Hero — چک آگهی */}
         <Animated.View style={[styles.heroSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
           <GradientCard variant="primary" glowing>
             <View style={styles.heroContent}>
               <Text style={styles.heroEmoji}>🔍</Text>
               <Text style={styles.heroTitle}>آگهی رو چک کن</Text>
-              <Text style={styles.heroSubtitle}>
-                لینک آگهی دیوار یا باما رو بده{'\n'}
-                ۳ ثانیه‌ای بهت می‌گیم: بخر یا فرار کن!
-              </Text>
+              <Text style={styles.heroSubtitle}>لینک آگهی دیوار یا باما رو بده{'\n'}۳ ثانیه‌ای بهت می‌گیم: بخر یا فرار کن!</Text>
             </View>
-            <SearchBar
-              value={linkInput}
-              onChangeText={setLinkInput}
-              onSubmit={handleCheckLink}
-              loading={checkLoading}
-              placeholder="لینک آگهی رو بچسبون..."
-            />
+            <SearchBar value={linkInput} onChangeText={setLinkInput} onSubmit={handleCheckLink} loading={checkLoading} placeholder="لینک آگهی رو بچسبون..." />
           </GradientCard>
         </Animated.View>
 
         {/* شاخص بازار */}
-        <Animated.View style={[styles.marketSection, { opacity: fadeAnim }]}>
+        <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>📊 وضعیت بازار</Text>
             <TouchableOpacity onPress={() => navigation?.navigate('بازار')}>
@@ -164,101 +84,113 @@ const DashboardScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          <Card style={styles.indexCard}>
-            <View style={styles.indexRow}>
-              <View>
-                <Text style={styles.indexLabel}>شاخص کل خودرو</Text>
-                <View style={styles.indexValueRow}>
-                  <Text style={styles.indexValue}>{MOCK_MARKET.indexValue}</Text>
-                  <View style={[styles.changeBadge, { backgroundColor: `${colors.status.safe}20` }]}>
-                    <Text style={[styles.changeText, { color: colors.status.safe }]}>
-                      ▲ +{MOCK_MARKET.indexChange}٪
-                    </Text>
+          {marketLoading ? (
+            <ActivityIndicator color={colors.primary} size="large" style={{ padding: spacing.xl }} />
+          ) : (
+            <>
+              <Card style={styles.indexCard}>
+                <View style={styles.indexRow}>
+                  <View>
+                    <Text style={styles.indexLabel}>شاخص کل خودرو</Text>
+                    <View style={styles.indexValueRow}>
+                      <Text style={styles.indexValue}>{typeof indexValue === 'number' ? indexValue.toLocaleString('fa-IR') : indexValue}</Text>
+                      <View style={[styles.changeBadge, { backgroundColor: indexChange >= 0 ? `${colors.status.safe}20` : `${colors.status.danger}20` }]}>
+                        <Text style={[styles.changeText, { color: indexChange >= 0 ? colors.status.safe : colors.status.danger }]}>
+                          {indexChange >= 0 ? '▲' : '▼'} {Math.abs(indexChange)}٪
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  <View style={styles.miniChart}>
+                    <View style={[styles.chartBar, { height: 15 }]} />
+                    <View style={[styles.chartBar, { height: 22 }]} />
+                    <View style={[styles.chartBar, { height: 18 }]} />
+                    <View style={[styles.chartBar, { height: 28 }]} />
+                    <View style={[styles.chartBar, { height: 24 }]} />
+                    <View style={[styles.chartBar, { height: 32 }]} />
+                    <View style={[styles.chartBar, { height: 38, backgroundColor: colors.primary }]} />
                   </View>
                 </View>
-              </View>
-              <View style={styles.miniChart}>
-                <View style={[styles.chartBar, { height: 15 }]} />
-                <View style={[styles.chartBar, { height: 22 }]} />
-                <View style={[styles.chartBar, { height: 18 }]} />
-                <View style={[styles.chartBar, { height: 28 }]} />
-                <View style={[styles.chartBar, { height: 24 }]} />
-                <View style={[styles.chartBar, { height: 32 }]} />
-                <View style={[styles.chartBar, { height: 38, backgroundColor: colors.primary }]} />
-              </View>
-            </View>
-          </Card>
+              </Card>
 
-          <View style={styles.miniCards}>
-            <Card style={styles.miniCard}>
-              <Text style={styles.miniCardIcon}>📈</Text>
-              <Text style={styles.miniCardValue}>{MOCK_MARKET.topGainer.name}</Text>
-              <Text style={[styles.miniCardChange, { color: colors.status.safe }]}>+{MOCK_MARKET.topGainer.change}٪</Text>
-            </Card>
-            <Card style={styles.miniCard}>
-              <Text style={styles.miniCardIcon}>📉</Text>
-              <Text style={styles.miniCardValue}>{MOCK_MARKET.topLoser.name}</Text>
-              <Text style={[styles.miniCardChange, { color: colors.status.danger }]}>{MOCK_MARKET.topLoser.change}٪</Text>
-            </Card>
-            <Card style={styles.miniCard}>
-              <Text style={styles.miniCardIcon}>🔥</Text>
-              <Text style={styles.miniCardValue}>{MOCK_MARKET.opportunities}</Text>
-              <Text style={styles.miniCardLabel}>فرصت</Text>
-            </Card>
-          </View>
-        </Animated.View>
+              {/* top gainers/losers */}
+              <View style={styles.miniCards}>
+                {topGainers[0] && (
+                  <Card style={styles.miniCard}>
+                    <Text style={styles.miniCardIcon}>📈</Text>
+                    <Text style={styles.miniCardValue}>{topGainers[0].model}</Text>
+                    <Text style={[styles.miniCardChange, { color: colors.status.safe }]}>+{topGainers[0].price_change_weekly}٪</Text>
+                  </Card>
+                )}
+                {topLosers[0] && (
+                  <Card style={styles.miniCard}>
+                    <Text style={styles.miniCardIcon}>📉</Text>
+                    <Text style={styles.miniCardValue}>{topLosers[0].model}</Text>
+                    <Text style={[styles.miniCardChange, { color: colors.status.danger }]}>{topLosers[0].price_change_weekly}٪</Text>
+                  </Card>
+                )}
+                <Card style={styles.miniCard}>
+                  <Text style={styles.miniCardIcon}>🔥</Text>
+                  <Text style={styles.miniCardValue}>{opportunities?.length || 0}</Text>
+                  <Text style={styles.miniCardLabel}>فرصت</Text>
+                </Card>
+              </View>
+            </>
+          )}
+        </View>
 
         {/* فرصت‌ها */}
-        <View style={styles.opportunitiesSection}>
+        <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>🔥 فرصت‌های داغ امروز</Text>
+            <Text style={styles.sectionTitle}>🔥 فرصت‌های داغ</Text>
             <TouchableOpacity onPress={() => navigation?.navigate('فرصت‌ها')}>
               <Text style={styles.seeAll}>همه →</Text>
             </TouchableOpacity>
           </View>
 
-          {MOCK_OPPORTUNITIES.map((opp, index) => (
-            <Animated.View
-              key={opp.id}
-              style={[
-                styles.oppCardWrapper,
-                {
-                  opacity: cardAnims[index],
-                  transform: [{
-                    translateY: cardAnims[index].interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [40, 0],
-                    }),
-                  }],
-                },
-              ]}
-            >
-              <OpportunityCard
-                opportunity={opp}
-                onPress={() => navigation?.navigate('چک آگهی')}
-              />
-            </Animated.View>
-          ))}
+          {oppsLoading ? (
+            <ActivityIndicator color={colors.primary} size="large" style={{ padding: spacing.xl }} />
+          ) : opportunities && opportunities.length > 0 ? (
+            opportunities.map((opp) => (
+              <View key={opp.id} style={styles.oppCardWrapper}>
+                <OpportunityCard
+                  opportunity={{
+                    ...opp,
+                    carName: opp.car_name,
+                    healthScore: opp.health_score,
+                    timeAgo: opp.time_ago,
+                  }}
+                  onPress={() => navigation?.navigate('چک آگهی', { link: opp.url })}
+                />
+              </View>
+            ))
+          ) : (
+            <Card style={{ padding: spacing.xl, alignItems: 'center' }}>
+              <Text style={{ ...typography.body, color: colors.text.secondary }}>
+                فرصتی فعلاً پیدا نشده — بعداً چک کن!
+              </Text>
+            </Card>
+          )}
         </View>
 
         {/* آمار */}
-        <View style={styles.statsSection}>
+        <View style={styles.section}>
           <GradientCard variant="dark">
-            <Text style={styles.statsTitle}>📋 عملکرد امروز</Text>
+            <Text style={styles.statsTitle}>📋 آمار بازار</Text>
             <View style={styles.statsGrid}>
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{MOCK_MARKET.totalAds}</Text>
+                <Text style={styles.statNumber}>{totalAds || '—'}</Text>
                 <Text style={styles.statLabel}>آگهی رصدشده</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={[styles.statNumber, { color: colors.status.safe }]}>{MOCK_MARKET.opportunities}</Text>
+                <Text style={[styles.statNumber, { color: colors.status.safe }]}>{opportunities?.length || 0}</Text>
                 <Text style={styles.statLabel}>فرصت</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={[styles.statNumber, { color: colors.status.danger }]}>{MOCK_MARKET.scams}</Text>
-                <Text style={styles.statLabel}>مشکوک</Text>
+                <Text style={[styles.statNumber, { color: colors.text.primary }]}>{marketData?.total_cars || 0}</Text>
+                <Text style={styles.statLabel}>مدل خودرو</Text>
               </View>
             </View>
           </GradientCard>
@@ -284,10 +216,11 @@ const styles = StyleSheet.create({
   heroTitle: { ...typography.h2, color: colors.text.primary, textAlign: 'center' },
   heroSubtitle: { ...typography.bodySmall, color: colors.text.secondary, textAlign: 'center', marginTop: spacing.xs, lineHeight: 22 },
 
-  marketSection: { paddingHorizontal: spacing.lg, marginTop: spacing.sm },
+  section: { paddingHorizontal: spacing.lg, marginTop: spacing.xl },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   sectionTitle: { ...typography.h4, color: colors.text.primary },
   seeAll: { ...typography.label, color: colors.primary },
+
   indexCard: { padding: spacing.lg, borderColor: `${colors.primary}30` },
   indexRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   indexLabel: { ...typography.caption, color: colors.text.secondary },
@@ -305,10 +238,8 @@ const styles = StyleSheet.create({
   miniCardChange: { ...typography.captionBold, fontSize: 11, marginTop: 2 },
   miniCardLabel: { ...typography.caption, color: colors.text.secondary, marginTop: 2, fontSize: 10 },
 
-  opportunitiesSection: { paddingHorizontal: spacing.lg, marginTop: spacing.xxl },
   oppCardWrapper: { marginBottom: spacing.md },
 
-  statsSection: { paddingHorizontal: spacing.lg, marginTop: spacing.xxl },
   statsTitle: { ...typography.h4, color: colors.text.primary, marginBottom: spacing.lg },
   statsGrid: { flexDirection: 'row', alignItems: 'center' },
   statItem: { flex: 1, alignItems: 'center' },
