@@ -20,11 +20,16 @@ pip install -r requirements.txt
 # Seed دیتابیس (داده‌های نمونه)
 python -m app.db.seed
 
-# اجرا
+# اجرا (فقط لوکال)
 uvicorn app.main:app --reload --port 8000
+
+# اجرا (برای دسترسی از گوشی — همیشه از این استفاده کن)
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 بعد از اجرا: http://localhost:8000/docs → Swagger UI
+
+> ⚠️ **مهم:** اگه می‌خوای اپ روی گوشی به بک‌اند وصل بشه، حتماً `--host 0.0.0.0` رو اضافه کن!
 
 ---
 
