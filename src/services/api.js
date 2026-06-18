@@ -5,8 +5,8 @@
 
 // آدرس بک‌اند — وقتی روی یه شبکه‌ای، IP لوکالت رو بذار
 // برای تست روی گوشی، IP واقعی کامپیوترت رو بذار (نه localhost)
-const BASE_URL = 'http://10.0.2.2:8000'; // Android Emulator
-// const BASE_URL = 'http://192.168.1.X:8000'; // گوشی واقعی — IP خودت رو بذار
+// const BASE_URL = 'http://10.0.2.2:8000'; // Android Emulator
+const BASE_URL = 'http://192.168.100.28:8000'; // گوشی واقعی
 
 /**
  * درخواست GET
