@@ -326,19 +326,42 @@ class CheckService:
         saving = market_price - price if market_price > price else 0
         saving_text = f"{saving} میلیون" if saving > 0 else None
         
-        # ذخیره
-        ad = Ad(
-            url=url,
-            source=source,
-            title=ad_data.get("title", ""),
-            price=price,
-            brand=ad_data.get("brand"),
-            model=ad_data.get("model"),
-            year=ad_data.get("year"),
-            mileage=ad_data.get("mileage"),
-            color=ad_data.get("color"),
-            city=ad_data.get("city"),
-            market_price=market_price,
+        # بررسی آیا قبلاً ذخیره شده (جلوگیری از UNIQUE error)
+        existing = db.query(Ad).filter(Ad.url == url).first()
+        if existing:
+            # آپدیت رکورد موجود
+            existing.title = ad_data.get("title", "")
+            existing.price = price
+            existing.brand = ad_data.get("brand")
+            existing.model = ad_data.get("model")
+            existing.year = ad_data.get("year")
+            existing.mileage = ad_data.get("mileage")
+            existing.color = ad_data.get("color")
+            existing.city = ad_data.get("city")
+            existing.market_price = market_price
+            existing.price_diff_percent = round(price_diff, 1)
+            existing.health_score = health_score
+            existing.verdict = verdict
+            existing.is_original_photos = ad_data.get("image_count", 0) >= 3
+            existing.is_suspicious = verdict == "scam"
+            existing.car_id = car.id if car else None
+            existing.checked_at = datetime.utcnow()
+            db.commit()
+            ad = existing
+        else:
+            # ذخیره جدید
+            ad = Ad(
+                url=url,
+                source=source,
+                title=ad_data.get("title", ""),
+                price=price,
+                brand=ad_data.get("brand"),
+                model=ad_data.get("model"),
+                year=ad_data.get("year"),
+                mileage=ad_data.get("mileage"),
+                color=ad_data.get("color"),
+                city=ad_data.get("city"),
+                market_price=market_price,
             price_diff_percent=round(price_diff, 1),
             health_score=health_score,
             verdict=verdict,
