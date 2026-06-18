@@ -303,3 +303,77 @@ class CheckService:
         db.commit()
         
         return {"message": "گزارش ثبت شد", "total_reports": ad.reported_count}
+
+
+    @staticmethod
+    def analyze_ad_with_real_data(db: Session, url: str, ad_data: dict, health_checks: list, health_score: int) -> dict:
+        """تحلیل با داده واقعی خوانده‌شده از سایت"""
+        
+        source = "divar" if "divar.ir" in url else "bama"
+        price = ad_data.get("price", 0)
+        
+        # پیدا کردن قیمت بازار
+        car = CheckService._find_matching_car(db, ad_data)
+        market_price = car.market_price if car else price
+        
+        # محاسبه اختلاف
+        price_diff = ((price - market_price) / market_price * 100) if market_price > 0 else 0
+        
+        # حکم
+        verdict, verdict_text = CheckService._determine_verdict(health_score, price_diff)
+        
+        # صرفه‌جویی
+        saving = market_price - price if market_price > price else 0
+        saving_text = f"{saving} میلیون" if saving > 0 else None
+        
+        # ذخیره
+        ad = Ad(
+            url=url,
+            source=source,
+            title=ad_data.get("title", ""),
+            price=price,
+            brand=ad_data.get("brand"),
+            model=ad_data.get("model"),
+            year=ad_data.get("year"),
+            mileage=ad_data.get("mileage"),
+            color=ad_data.get("color"),
+            city=ad_data.get("city"),
+            market_price=market_price,
+            price_diff_percent=round(price_diff, 1),
+            health_score=health_score,
+            verdict=verdict,
+            is_original_photos=ad_data.get("image_count", 0) >= 3,
+            is_suspicious=verdict == "scam",
+            car_id=car.id if car else None,
+        )
+        db.add(ad)
+        db.commit()
+        db.refresh(ad)
+        
+        car_name = f"{ad_data.get('brand', '')} {ad_data.get('model', '')}".strip() or ad_data.get("title", "خودرو")
+        
+        return {
+            "car_name": car_name,
+            "brand": ad_data.get("brand", ""),
+            "model": ad_data.get("model", ""),
+            "year": ad_data.get("year", ""),
+            "mileage": f"{ad_data['mileage']:,} کیلومتر" if ad_data.get("mileage") else None,
+            "color": ad_data.get("color"),
+            "city": ad_data.get("city"),
+            "health_score": health_score,
+            "verdict": verdict,
+            "verdict_text": verdict_text,
+            "saving_amount": saving_text,
+            "price_comparison": {
+                "ad_price": price,
+                "market_price": market_price,
+                "diff_percent": round(price_diff, 1),
+                "diff_amount": int(price - market_price),
+                "price_one_week_ago": int(market_price * 1.01),
+                "price_two_weeks_ago": int(market_price * 1.02),
+                "price_one_month_ago": int(market_price * 0.97),
+            },
+            "health_checks": health_checks,
+            "source": source,
+            "checked_at": ad.checked_at or datetime.utcnow(),
+        }

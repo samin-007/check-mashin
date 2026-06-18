@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.schemas.ad import CheckRequest, CheckResult
 from app.services.check_service import CheckService
+from app.scraper.checker import AdChecker
 
 router = APIRouter()
 
@@ -18,6 +19,9 @@ async def check_ad(request: CheckRequest, db: Session = Depends(get_db)):
     
     ورودی: لینک آگهی دیوار یا باما
     خروجی: امتیاز سلامت + مقایسه قیمت + حکم نهایی
+    
+    اول تلاش می‌کنه واقعاً آگهی رو بخونه.
+    اگه نشد، از سرویس شبیه‌سازی استفاده می‌کنه.
     """
     if not request.url.strip():
         raise HTTPException(status_code=400, detail="لینک آگهی نمی‌تواند خالی باشد")
@@ -29,6 +33,20 @@ async def check_ad(request: CheckRequest, db: Session = Depends(get_db)):
             detail="فقط لینک‌های دیوار (divar.ir) و باما (bama.ir) پشتیبانی می‌شوند"
         )
     
+    # تلاش برای خواندن واقعی آگهی
+    try:
+        checker = AdChecker()
+        real_result = await checker.check(request.url)
+        
+        if real_result and real_result.get("ad_data", {}).get("price"):
+            # موفق شدیم واقعاً بخونیم!
+            ad_data = real_result["ad_data"]
+            result = CheckService.analyze_ad_with_real_data(db, request.url, ad_data, real_result["health_checks"], real_result["health_score"])
+            return result
+    except Exception as e:
+        print(f"[CheckAd] Real scrape failed: {e}, falling back to simulation")
+    
+    # Fallback: شبیه‌سازی
     result = CheckService.analyze_ad(db, request.url)
     return result
 

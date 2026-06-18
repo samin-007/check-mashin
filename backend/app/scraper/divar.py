@@ -1,0 +1,202 @@
+"""
+اسکرپر دیوار — خواندن اطلاعات آگهی از divar.ir
+با رعایت delay برای بلاک نشدن
+"""
+
+import httpx
+import random
+import asyncio
+import re
+from typing import Optional, Dict
+
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/119.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+]
+
+
+class DivarScraper:
+    """اسکرپر دیوار — خواندن آگهی‌های خودرو"""
+
+    def __init__(self):
+        self.headers = {
+            "User-Agent": random.choice(USER_AGENTS),
+            "Accept": "application/json, text/html",
+            "Accept-Language": "fa-IR,fa;q=0.9",
+        }
+
+    async def get_ad_details(self, url: str) -> Optional[Dict]:
+        """دریافت اطلاعات آگهی از لینک دیوار"""
+        try:
+            token = self._extract_token(url)
+            if not token:
+                return None
+
+            # delay تصادفی (۲ تا ۵ ثانیه)
+            await asyncio.sleep(random.uniform(2, 5))
+
+            async with httpx.AsyncClient(timeout=15) as client:
+                self.headers["User-Agent"] = random.choice(USER_AGENTS)
+
+                # روش ۱: API دیوار
+                response = await client.get(
+                    f"https://api.divar.ir/v8/posts-v2/web/{token}",
+                    headers=self.headers,
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    return self._parse_api_response(data, url)
+
+                # روش ۲: HTML fallback
+                response = await client.get(url, headers=self.headers, follow_redirects=True)
+                if response.status_code == 200:
+                    return self._parse_html(response.text, url)
+
+        except Exception as e:
+            print(f"[DivarScraper] Error: {e}")
+            return None
+
+    async def search_cars(self, city: str = "tehran", limit: int = 20) -> list:
+        """جستجوی آگهی‌های خودرو"""
+        try:
+            await asyncio.sleep(random.uniform(3, 7))
+
+            payload = {
+                "city_ids": [self._get_city_id(city)],
+                "search_data": {
+                    "form_data": {"data": {"category": {"str": {"value": "light"}}}}
+                }
+            }
+
+            async with httpx.AsyncClient(timeout=15) as client:
+                self.headers["User-Agent"] = random.choice(USER_AGENTS)
+                response = await client.post(
+                    "https://api.divar.ir/v8/postlist/w/search",
+                    json=payload,
+                    headers=self.headers,
+                )
+
+                if response.status_code == 200:
+                    return self._parse_search(response.json(), limit)
+
+        except Exception as e:
+            print(f"[DivarScraper] Search error: {e}")
+        return []
+
+    def _extract_token(self, url: str) -> Optional[str]:
+        """استخراج token از URL"""
+        patterns = [
+            r'divar\.ir/v/[^/]+/([a-zA-Z0-9_-]+)',
+            r'divar\.ir/v/([a-zA-Z0-9_-]+)',
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, url)
+            if match:
+                return match.group(1)
+        return None
+
+    def _parse_api_response(self, data: dict, url: str) -> Optional[Dict]:
+        """پارس پاسخ API"""
+        try:
+            result = {
+                "url": url,
+                "source": "divar",
+                "title": data.get("share", {}).get("title", ""),
+                "price": None,
+                "brand": None,
+                "model": None,
+                "year": None,
+                "mileage": None,
+                "color": None,
+                "city": None,
+                "image_count": len(data.get("images", [])),
+                "description": "",
+            }
+
+            for section in data.get("sections", []):
+                for widget in section.get("widgets", []):
+                    wtype = widget.get("widget_type", "")
+                    wdata = widget.get("data", {})
+
+                    if "PRICE" in wtype:
+                        result["price"] = self._parse_price(wdata.get("value", ""))
+
+                    if "TABLE" in wtype or "GROUP" in wtype:
+                        for item in wdata.get("items", []):
+                            title = item.get("title", "")
+                            value = item.get("value", "")
+                            if "برند" in title: result["brand"] = value
+                            elif "مدل" in title: result["model"] = value
+                            elif "سال" in title: result["year"] = value
+                            elif "کارکرد" in title: result["mileage"] = self._parse_num(value)
+                            elif "رنگ" in title: result["color"] = value
+
+            return result
+        except Exception as e:
+            print(f"[DivarScraper] Parse error: {e}")
+            return None
+
+    def _parse_html(self, html: str, url: str) -> Optional[Dict]:
+        """Fallback: پارس HTML"""
+        result = {
+            "url": url,
+            "source": "divar",
+            "title": "",
+            "price": None,
+            "brand": None,
+            "model": None,
+            "year": None,
+            "mileage": None,
+            "color": None,
+            "city": None,
+            "image_count": html.count('img') // 3,
+        }
+
+        title_match = re.search(r'<title>([^<]+)</title>', html)
+        if title_match:
+            result["title"] = title_match.group(1).strip()
+
+        price_match = re.search(r'(\d[\d,]+)\s*تومان', html)
+        if price_match:
+            result["price"] = self._parse_price(price_match.group(1))
+
+        year_match = re.search(r'(1[34]\d{2})', html)
+        if year_match:
+            result["year"] = year_match.group(1)
+
+        return result
+
+    def _parse_search(self, data: dict, limit: int) -> list:
+        """پارس نتایج جستجو"""
+        results = []
+        for post in data.get("list_widgets", [])[:limit]:
+            pdata = post.get("data", {})
+            token = pdata.get("action", {}).get("payload", {}).get("token", "")
+            if token:
+                results.append({
+                    "url": f"https://divar.ir/v/{token}",
+                    "title": pdata.get("title", ""),
+                })
+        return results
+
+    def _parse_price(self, text: str) -> Optional[int]:
+        """تبدیل متن قیمت به میلیون تومان"""
+        if not text:
+            return None
+        nums = re.sub(r'[^\d]', '', text)
+        if nums:
+            price = int(nums)
+            if price > 1000000000: return price // 10000000
+            elif price > 1000000: return price // 1000000
+            elif price > 100: return price
+        return None
+
+    def _parse_num(self, text: str) -> Optional[int]:
+        nums = re.sub(r'[^\d]', '', text)
+        return int(nums) if nums else None
+
+    def _get_city_id(self, city: str) -> int:
+        cities = {"tehran": 1, "isfahan": 4, "shiraz": 7, "karaj": 301, "mashhad": 3, "tabriz": 2}
+        return cities.get(city, 1)
