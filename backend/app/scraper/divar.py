@@ -110,12 +110,12 @@ class DivarScraper:
         return None
 
     def _parse_api_response(self, data: dict, url: str) -> Optional[Dict]:
-        """پارس پاسخ API"""
+        """پارس پاسخ API دیوار — ساختار واقعی"""
         try:
             result = {
                 "url": url,
                 "source": "divar",
-                "title": data.get("share", {}).get("title", ""),
+                "title": "",
                 "price": None,
                 "brand": None,
                 "model": None,
@@ -123,29 +123,79 @@ class DivarScraper:
                 "mileage": None,
                 "color": None,
                 "city": None,
-                "image_count": len(data.get("images", [])),
+                "image_count": 0,
                 "description": "",
             }
 
+            # شهر
+            if "city" in data:
+                result["city"] = data["city"].get("name", "")
+
+            # عنوان از share
+            if "share" in data:
+                result["title"] = data["share"].get("title", "")
+
+            # webengage — قیمت و تعداد عکس
+            if "webengage" in data:
+                we = data["webengage"]
+                price_raw = we.get("price", 0)
+                if price_raw and price_raw > 0:
+                    result["price"] = int(price_raw / 10000000) if price_raw > 1000000000 else int(price_raw / 10000)
+                result["image_count"] = we.get("image_count", 0)
+                brand_model = we.get("brand_model", "")
+                if brand_model:
+                    parts = brand_model.split(" ", 1)
+                    if len(parts) >= 1:
+                        result["brand"] = parts[0]
+                    if len(parts) >= 2:
+                        result["model"] = parts[1]
+
+            # SEO schema — رنگ و کارکرد
+            if "seo" in data and "post_seo_schema" in data["seo"]:
+                schema = data["seo"]["post_seo_schema"]
+                if "color" in schema:
+                    result["color"] = schema["color"]
+                if "mileageFromOdometer" in schema:
+                    mileage_val = schema["mileageFromOdometer"].get("value", "")
+                    if mileage_val:
+                        result["mileage"] = int(re.sub(r'[^\d]', '', str(mileage_val)))
+                if "brand" in schema and isinstance(schema["brand"], dict):
+                    brand_name = schema["brand"].get("name", "")
+                    if brand_name:
+                        result["brand"] = brand_name
+
+            # Sections — اطلاعات تکمیلی
             for section in data.get("sections", []):
                 for widget in section.get("widgets", []):
                     wtype = widget.get("widget_type", "")
                     wdata = widget.get("data", {})
 
-                    if "PRICE" in wtype:
-                        result["price"] = self._parse_price(wdata.get("value", ""))
-
-                    if "TABLE" in wtype or "GROUP" in wtype:
+                    if wtype == "GROUP_INFO_ROW":
                         for item in wdata.get("items", []):
                             title = item.get("title", "")
                             value = item.get("value", "")
-                            if "برند" in title: result["brand"] = value
-                            elif "مدل" in title: result["model"] = value
-                            elif "سال" in title: result["year"] = value
-                            elif "کارکرد" in title: result["mileage"] = self._parse_num(value)
-                            elif "رنگ" in title: result["color"] = value
+                            if "کارکرد" in title:
+                                result["mileage"] = self._parse_num(value)
+                            elif "سال" in title or "مدل" in title:
+                                result["year"] = value
+                            elif "رنگ" in title:
+                                result["color"] = value
 
+                    elif wtype == "UNEXPANDABLE_ROW":
+                        title = wdata.get("title", "")
+                        value = wdata.get("value", "")
+                        if "برند" in title:
+                            result["brand"] = value
+                        elif "قیمت" in title:
+                            result["price"] = self._parse_price(value)
+
+                    elif wtype == "IMAGE_CAROUSEL":
+                        items = wdata.get("items", [])
+                        result["image_count"] = len(items)
+
+            print(f"[DivarScraper] Parsed: {result['title']} | price={result['price']} | brand={result['brand']}")
             return result
+
         except Exception as e:
             print(f"[DivarScraper] Parse error: {e}")
             return None
