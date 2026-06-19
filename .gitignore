@@ -1,10 +1,17 @@
 # Dependencies
 node_modules/
+package-lock.json
 
 # Expo
 .expo/
 dist/
 web-build/
+
+# Python
+__pycache__/
+*.pyc
+backend/venv/
+backend/*.db
 
 # Environment
 .env
