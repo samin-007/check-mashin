@@ -189,7 +189,8 @@ class DivarScraper:
                         value = wdata.get("value", "")
                         if "برند" in title:
                             result["brand"] = value
-                        elif "قیمت" in title:
+                        elif "قیمت" in title and result["price"] is None:
+                            # فقط اگه از webengage قیمت نگرفتیم
                             result["price"] = self._parse_price(value)
 
                     elif wtype == "IMAGE_CAROUSEL":
