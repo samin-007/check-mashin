@@ -139,9 +139,11 @@ class DivarScraper:
             if "webengage" in data:
                 we = data["webengage"]
                 price_raw = we.get("price", 0)
+                print(f"[DivarScraper] RAW price from webengage: {price_raw}")
                 if price_raw and price_raw > 0:
                     # قیمت دیوار به تومان هست — تبدیل به میلیون تومان
                     result["price"] = int(price_raw / 1000000)
+                    print(f"[DivarScraper] Converted price: {result['price']} million")
                 result["image_count"] = we.get("image_count", 0)
                 brand_model = we.get("brand_model", "")
                 if brand_model:
