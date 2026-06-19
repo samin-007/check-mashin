@@ -7,12 +7,20 @@ import { View, Text, StyleSheet } from 'react-native';
 import { colors, typography, spacing, borderRadius } from '@theme';
 
 const PriceTag = ({ price, comparePrice, size = 'md', showDiff = true }) => {
-  // فرمت کردن قیمت به تومان
+  // فرمت کردن قیمت (ورودی: میلیون تومان)
   const formatPrice = (p) => {
-    if (p >= 1000) {
-      return `${(p / 1000).toFixed(p % 1000 === 0 ? 0 : 1)} میلیارد`;
+    if (p >= 10000) {
+      // بالای ۱۰ میلیارد
+      return `${(p / 1000).toFixed(1)} میلیارد`;
+    } else if (p >= 1000) {
+      // بین ۱ تا ۱۰ میلیارد
+      const b = Math.floor(p / 1000);
+      const m = p % 1000;
+      if (m === 0) return `${b} میلیارد`;
+      return `${b} میلیارد و ${m} میلیون`;
     }
-    return `${p} میلیون`;
+    // زیر ۱ میلیارد
+    return `${p.toLocaleString('fa-IR')} میلیون`;
   };
 
   // محاسبه درصد اختلاف
