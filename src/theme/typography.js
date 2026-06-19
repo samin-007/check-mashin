@@ -5,8 +5,16 @@
 
 import { Platform } from 'react-native';
 
-// فونت پیش‌فرض (برای فارسی بعداً فونت اختصاصی اضافه می‌شه)
+// فونت Vazirmatn — بهترین فونت فارسی برای موبایل
+// برای استفاده: npx expo install expo-font
+// بعد فونت‌ها رو از https://github.com/rastikerdar/vazirmatn دانلود کن و تو assets/fonts بذار
 const fontFamily = Platform.select({
+  ios: 'Vazirmatn',
+  android: 'Vazirmatn',
+});
+
+// Fallback اگه فونت لود نشده بود
+const fontFamilyFallback = Platform.select({
   ios: 'System',
   android: 'Roboto',
 });

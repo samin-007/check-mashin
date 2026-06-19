@@ -1,14 +1,13 @@
 /**
- * AnimatedGauge — گیج انیمیشن‌دار مثل سرعت‌سنج ماشین
- * نمایش امتیاز سلامت آگهی با انیمیشن چرخشی
+ * AnimatedGauge — گیج انیمیشن‌دار (فیکس شده: ۱۰۰ = کامل پر)
  */
 
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
-import { colors, typography, spacing } from '@theme';
+import { colors, spacing } from '../theme';
 
 const AnimatedGauge = ({
-  score = 0,           // 0-100
+  score = 0,
   size = 140,
   thickness = 10,
   animated = true,
@@ -47,59 +46,53 @@ const AnimatedGauge = ({
   const color = getColor(score);
   const statusText = label || getStatusText(score);
 
-  // محاسبه progress bar width
-  const progressWidth = animatedValue.interpolate({
-    inputRange: [0, 100],
-    outputRange: ['0%', '100%'],
-  });
-
-  const displayScore = animatedValue.interpolate({
-    inputRange: [0, 100],
-    outputRange: [0, 100],
-  });
+  // محاسبه درصد پر شدن حلقه
+  const percentage = Math.min(score, 100) / 100;
 
   return (
     <View style={[styles.container, { width: size, height: size }]}>
-      {/* حلقه بیرونی */}
-      <View style={[styles.outerRing, { 
-        width: size, 
-        height: size, 
+      {/* حلقه پس‌زمینه */}
+      <View style={[styles.ring, {
+        width: size,
+        height: size,
         borderRadius: size / 2,
         borderWidth: thickness,
         borderColor: `${color}20`,
-      }]}>
-        {/* حلقه progress */}
+      }]} />
+
+      {/* حلقه پر شده — بالا */}
+      {percentage > 0 && (
         <View style={[styles.progressRing, {
           width: size,
           height: size,
           borderRadius: size / 2,
           borderWidth: thickness,
           borderColor: color,
-          borderRightColor: 'transparent',
-          borderBottomColor: score > 50 ? color : 'transparent',
-          transform: [{ rotate: '-45deg' }],
+          borderTopColor: percentage >= 0.25 ? color : 'transparent',
+          borderRightColor: percentage >= 0.5 ? color : 'transparent',
+          borderBottomColor: percentage >= 0.75 ? color : 'transparent',
+          borderLeftColor: percentage >= 1 ? color : 'transparent',
+          transform: [{ rotate: '-135deg' }],
         }]} />
-      </View>
+      )}
 
-      {/* متن مرکزی */}
-      <View style={styles.center}>
-        <View style={[styles.innerCircle, {
-          width: size - thickness * 2 - 12,
-          height: size - thickness * 2 - 12,
-          borderRadius: (size - thickness * 2 - 12) / 2,
-        }]}>
-          <Text style={[styles.score, { fontSize: size * 0.22, color }]}>
-            {score}
+      {/* دایره مرکزی */}
+      <View style={[styles.center, {
+        width: size - thickness * 2 - 8,
+        height: size - thickness * 2 - 8,
+        borderRadius: (size - thickness * 2 - 8) / 2,
+      }]}>
+        <Text style={[styles.score, { fontSize: size * 0.22, color }]}>
+          {score}
+        </Text>
+        {showLabel && (
+          <Text style={[styles.label, { fontSize: size * 0.09, color }]}>
+            {statusText}
           </Text>
-          {showLabel && (
-            <Text style={[styles.label, { fontSize: size * 0.09, color }]}>
-              {statusText}
-            </Text>
-          )}
-        </View>
+        )}
       </View>
 
-      {/* glow effect */}
+      {/* افکت glow */}
       <View style={[styles.glow, {
         width: size + 20,
         height: size + 20,
@@ -116,25 +109,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
   },
-  outerRing: {
+  ring: {
     position: 'absolute',
   },
   progressRing: {
     position: 'absolute',
-    top: -10,
-    left: -10,
   },
   center: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  innerCircle: {
     backgroundColor: colors.background.tertiary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.border.secondary,
+    position: 'absolute',
   },
   score: {
     fontWeight: '800',

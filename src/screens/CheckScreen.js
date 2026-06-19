@@ -138,6 +138,12 @@ const CheckScreen = ({ navigation, route }) => {
                   <Text style={styles.savingText}>🎉 صرفه‌جویی: {result.saving_amount} تومان</Text>
                 </View>
               )}
+
+              {result.price_comparison.ad_price === result.price_comparison.market_price && (
+                <View style={[styles.savingBadge, { borderColor: `${colors.status.info}30`, backgroundColor: `${colors.status.info}10` }]}>
+                  <Text style={[styles.savingText, { color: colors.status.info }]}>ℹ️ قیمت بازار برای این مدل در دیتابیس ما موجود نیست</Text>
+                </View>
+              )}
             </Card>
 
             {/* چک‌لیست سلامت */}

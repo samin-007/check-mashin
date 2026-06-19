@@ -1,6 +1,5 @@
 /**
- * چک‌ماشین — Navigation اصلی (Expo Compatible)
- * Bottom Tab با تم خودرویی
+ * چک‌ماشین — Navigation (آیکون‌های سفید/سبز)
  */
 
 import React from 'react';
@@ -12,25 +11,26 @@ import CheckScreen from '../screens/CheckScreen';
 import OpportunitiesScreen from '../screens/OpportunitiesScreen';
 import AlertsScreen from '../screens/AlertsScreen';
 import MarketScreen from '../screens/MarketScreen';
-import { colors, typography, spacing } from '../theme';
+import { colors, typography } from '../theme';
 
 const Tab = createBottomTabNavigator();
 
-// آیکون‌های ساده (emoji)
-const TabIcon = ({ label, focused }) => {
+// آیکون‌های ساده Unicode (سفید، سبز وقتی فعال)
+const TabIcon = ({ name, focused }) => {
   const icons = {
-    'خانه': '🏠',
-    'چک آگهی': '🔍',
-    'فرصت‌ها': '🔥',
-    'هشدارها': '🔔',
-    'بازار': '📊',
+    'خانه': '⌂',
+    'چک آگهی': '⊘',
+    'فرصت‌ها': '◈',
+    'هشدارها': '⊙',
+    'بازار': '⊞',
   };
 
   return (
-    <View style={styles.tabIcon}>
-      <Text style={[styles.tabEmoji, focused && styles.tabEmojiActive]}>
-        {icons[label]}
+    <View style={styles.tabIconContainer}>
+      <Text style={[styles.tabIcon, { color: focused ? colors.primary : '#ffffff' }]}>
+        {icons[name]}
       </Text>
+      {focused && <View style={styles.tabDot} />}
     </View>
   );
 };
@@ -43,10 +43,10 @@ const AppNavigator = () => {
           headerShown: false,
           tabBarStyle: styles.tabBar,
           tabBarActiveTintColor: colors.primary,
-          tabBarInactiveTintColor: colors.text.tertiary,
+          tabBarInactiveTintColor: '#ffffff',
           tabBarLabelStyle: styles.tabLabel,
           tabBarIcon: ({ focused }) => (
-            <TabIcon label={route.name} focused={focused} />
+            <TabIcon name={route.name} focused={focused} />
           ),
         })}
       >
@@ -82,16 +82,20 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
   },
-  tabIcon: {
+  tabIconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tabEmoji: {
-    fontSize: 20,
-    opacity: 0.5,
+  tabIcon: {
+    fontSize: 22,
+    fontWeight: '700',
   },
-  tabEmojiActive: {
-    opacity: 1,
+  tabDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.primary,
+    marginTop: 3,
   },
 });
 

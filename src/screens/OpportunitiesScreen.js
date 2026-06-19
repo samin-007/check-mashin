@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
 
   filterRow: { maxHeight: 50, marginTop: spacing.md },
   filterContent: { paddingHorizontal: spacing.lg, gap: spacing.sm },
-  filterChip: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: borderRadius.full, backgroundColor: colors.background.secondary, borderWidth: 1, borderColor: colors.border.primary, marginRight: spacing.sm },
+  filterChip: { paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderRadius: borderRadius.full, backgroundColor: colors.background.secondary, borderWidth: 1, borderColor: colors.border.primary, marginRight: spacing.sm },
   filterChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   filterText: { ...typography.label, color: colors.text.secondary },
   filterTextActive: { color: colors.text.inverse },
